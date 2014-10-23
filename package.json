@@ -1,0 +1,37 @@
+{
+  "name": "troufles",
+  "version": "0.0.1",
+  "description": "Fact-based data management.",
+  "main": "main.js",
+  "dependencies": {
+    "event-emitter": "~0.3.1",
+    "lie": "~2.7.6",
+    "react": "~0.10.0",
+    "cuid": "^1.2.4"
+  },
+  "devDependencies": {
+    "less": "~1.7.1",
+    "envify": "~1.2.1",
+    "browserify": "~4.1.10",
+    "coffeeify": "~0.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fiatjaf/troufles.git"
+  },
+  "keywords": [
+    "management",
+    "offline",
+    "offline-first",
+    "pouchdb",
+    "couchdb",
+    "triplestore",
+    "triples"
+  ],
+  "author": "Giovanni T. Parra",
+  "license": "Apache",
+  "bugs": {
+    "url": "https://github.com/fiatjaf/troufles/issues"
+  },
+  "homepage": "https://github.com/fiatjaf/troufles"
+}
