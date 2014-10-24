@@ -82,13 +82,17 @@ class Store
     ).catch(log).then (res) ->
       results = []
       for row in res.rows
-        if 'tgt' == Object.keys(row.highlighting)[0]
+        if 'tgt' == Object.keys(row.highlighting)[0] and
+           row.doc.src[0] == '#' and
+           row.doc.src.length > 6 and row.doc.src.length < 12
           results.push {
             label: row.doc.tgt
             display: row.doc.prd + ' -> ' + row.doc.tgt
             id: row.doc.src
           }
-        if 'src' == Object.keys(row.highlighting)[0]
+        if 'src' == Object.keys(row.highlighting)[0] and
+           row.doc.tgt[0] == '#' and
+           row.doc.tgt.length > 6 and row.doc.tgt.length < 12
           results.push {
             label: row.doc.src
             display: row.doc.src + ' <- ' + row.doc.prd
