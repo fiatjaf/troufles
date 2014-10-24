@@ -1,7 +1,13 @@
 Promise = require 'lie'
 cuid = require 'cuid'
 
+lunr = require 'lunr'
+require('./lunr.stemmer.support.js')(lunr)
+require('./lunr.pt.js')(lunr)
+PouchDB.plugin require 'pouchdb-quick-search'
+
 check = (x) -> throw {forbidden: 'something is missing.'} if not x
+log = log
 
 class Store
   constructor: (name='main') ->
@@ -17,11 +23,22 @@ class Store
       returnDocs: false
     )
 
+    @pouch.put
+      _id: '_design/definitions'
+      types: {}
+      views: {}
+    @pouch.get('_design/definitions').then((doc) => @definitions = doc)
+
   reset: ->
     @pouch.destroy()
 
   on: (type, listener) ->
     @changes.on(type, listener)
+
+  updateDefinitions: ->
+    @pouch.put(@definitions).then(=>
+      @pouch.get('_design/definitions')
+    ).then (doc) => @definitions = doc
 
   save: (data) ->
     triple = {
@@ -32,9 +49,14 @@ class Store
     }
 
     check triple.prd
-    check triple.src and triple.tgt
+    check triple.src or triple.tgt
 
-    @pouch.put(triple).catch (x) -> console.log x
+    if not triple.src
+      triple.src = '#' + cuid.slug()
+    if not triple.tgt
+      triple.tgt = '#' + cuid.slug()
+
+    @pouch.put(triple).catch log
 
   get: (id) ->
     @pouch.get(id)
@@ -44,7 +66,51 @@ class Store
       descending: true
       include_docs: true
       limit: 100
-    ).catch((x) -> console.log x).then (res) ->
+    ).catch(log).then (res) ->
       return (row.doc for row in res.rows)
+
+  searchActor: (term) ->
+    @pouch.search(
+      query: term
+      fields: ['src', 'tgt']
+      include_docs: true
+      language: 'pt'
+      mm: '50%'
+      highlighting: true
+      highlighting_pre: ''
+      highlighting_post: ''
+    ).catch(log).then (res) ->
+      results = []
+      for row in res.rows
+        if 'tgt' == Object.keys(row.highlighting)[0]
+          results.push {
+            label: row.doc.tgt
+            display: row.doc.prd + ' -> ' + row.doc.tgt
+            id: row.doc.src
+          }
+        if 'src' == Object.keys(row.highlighting)[0]
+          results.push {
+            label: row.doc.src
+            display: row.doc.src + ' <- ' + row.doc.prd
+            id: row.doc.tgt
+          }
+      return results
+
+  searchPredicate: (term) ->
+    @pouch.search(
+      query: term
+      fields: ['prd']
+      language: 'pt'
+      mm: '50%'
+      highlighting: true
+      highlighting_pre: ''
+      highlighting_post: ''
+    ).catch(log).then (res) ->
+      ({
+        display: row.highlighting.prd
+        label: row.highlighting.prd
+        id: row.highlighting.prd
+       } for row in res.rows)
+
 
 module.exports = new Store()

@@ -23,26 +23,41 @@ Main = React.createClass
     )
 
 Add = React.createClass
-  mixins: [React.addons.LinkedStateMixin]
   getInitialState: -> {}
 
   render: ->
-    (form
-      onSubmit: @createTriple
+    (div
+      id: 'input'
     ,
       (div {},
-        (input
-          valueLink: @linkState('source')
+        (Search
+          className: 'third'
+          search: @searchActor
+          value: @state.source
+          onChange: @change('source')
         )
-        (input
-          valueLink: @linkState('predicate')
+        (Search
+          className: 'third'
+          search: @searchPredicate
+          value: @state.predicate
+          onChange: @change('predicate')
         )
-        (input
-          valueLink: @linkState('target')
+        (Search
+          className: 'third'
+          search: @searchActor
+          value: @state.target
+          onChange: @change('target')
         )
       )
-      (button {}, 'Save')
+      (button
+        onClick: @createTriple
+      , 'Save')
     )
+
+  change: (attr) -> (e) =>
+    change = {}
+    change[attr] = e.target.value
+    @setState change
 
   createTriple: (e) ->
     e.preventDefault()
@@ -51,6 +66,48 @@ Add = React.createClass
         source: ''
         predicate: ''
         target: ''
+
+  searchActor: (term) ->
+    tripleStore.searchActor(term)
+
+  searchPredicate: (term, callback) ->
+    tripleStore.searchPredicate(term)
+
+Search = React.createClass
+  getInitialState: ->
+    options: []
+
+  componentWillReceiveProps: ->
+    @setState
+      selectedOptionId: null
+      options: []
+
+  render: ->
+    (div className: @props.className,
+      (Autocomplete.Combobox
+        onInput: @handleInput
+        onSelect: @handleSelect
+        value: @props.value
+        (Autocomplete.Option
+          key: option.id
+          value: option.id
+          label: option.label
+        , option.display) for option in @state.options
+      )
+    )
+
+  handleSelect: (value) ->
+    @props.onChange {target: {value: value}}
+    @setState selectedOptionId: value
+
+  handleInput: (input) ->
+    @props.onChange {target: {value: input}}
+    @setState
+      selectedOptionId: null
+      options: []
+    , =>
+      @props.search(input).then (options) =>
+        @setState options: options
 
 List = React.createClass
   getInitialState: ->
